@@ -59,10 +59,12 @@ export class Game {
     };
     this.mineTickSfxAt = 0;
     this.started = false;
+    this.cloudSprites = [];
 
     this.createSelectionOutline();
     this.createMiningOverlay();
     this.createSunBillboard();
+    this.createCloudLayer();
     this.animate = this.animate.bind(this);
     this.onResize = this.onResize.bind(this);
     this.refreshRecipesUI();
@@ -112,6 +114,93 @@ export class Game {
     this.sunSprite = new THREE.Sprite(sunMaterial);
     this.sunSprite.scale.set(42, 42, 1);
     this.scene.add(this.sunSprite);
+  }
+
+  createCloudLayer() {
+    const cloudCount = 16;
+    for (let i = 0; i < cloudCount; i += 1) {
+      const texture = this.createCloudTexture(1000 + i * 37);
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        fog: false,
+        depthWrite: false,
+        depthTest: true,
+        transparent: true,
+        opacity: 0.92,
+      });
+      const sprite = new THREE.Sprite(material);
+      const width = 30 + ((i * 17) % 18);
+      const height = width * (0.3 + ((i * 11) % 5) * 0.03);
+      sprite.scale.set(width, height, 1);
+      this.cloudSprites.push({
+        sprite,
+        angle: (i / cloudCount) * Math.PI * 2 + ((i % 3) - 1) * 0.12,
+        radius: 110 + (i % 6) * 18 + Math.floor(i / 3) * 4,
+        height: 42 + (i % 5) * 4 + ((i * 13) % 3),
+        drift: 0.6 + (i % 4) * 0.18,
+        wobble: 2 + (i % 3) * 0.7,
+        phase: i * 0.9,
+      });
+      this.scene.add(sprite);
+    }
+  }
+
+  createCloudTexture(seed) {
+    const size = 128;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, size, size);
+
+    const rng = (() => {
+      let state = seed >>> 0;
+      return () => {
+        state = (1664525 * state + 1013904223) >>> 0;
+        return state / 0xffffffff;
+      };
+    })();
+
+    const cells = [];
+    const cols = 8;
+    const rows = 4;
+    for (let z = 0; z < rows; z += 1) {
+      cells[z] = [];
+      for (let x = 0; x < cols; x += 1) {
+        cells[z][x] = false;
+      }
+    }
+
+    const start = 1 + Math.floor(rng() * 2);
+    const span = 4 + Math.floor(rng() * 3);
+    for (let x = start; x < Math.min(cols - 1, start + span); x += 1) {
+      cells[1][x] = true;
+      if (rng() > 0.2) cells[2][x] = true;
+      if (rng() > 0.55) cells[0][x] = true;
+      if (rng() > 0.7 && x > start && x < start + span - 1) cells[3][x] = true;
+    }
+
+    const cellW = 16;
+    const cellH = 16;
+    const offsetX = 0;
+    const offsetY = 20;
+    for (let z = 0; z < rows; z += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        if (!cells[z][x]) continue;
+        const px = offsetX + x * cellW;
+        const py = offsetY + z * cellH;
+        ctx.fillStyle = z === 0 ? "rgba(255,255,255,0.9)" : "rgba(247,250,255,0.95)";
+        ctx.fillRect(px, py, cellW, cellH);
+        ctx.fillStyle = "rgba(214,228,242,0.95)";
+        ctx.fillRect(px, py + cellH - 3, cellW, 3);
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+    return texture;
   }
 
   createSelectionOutline() {
@@ -418,6 +507,19 @@ export class Game {
     this.sunSprite.position.copy(sunPosition);
   }
 
+  updateClouds(elapsedTime) {
+    if (!this.cloudSprites.length) return;
+    for (const cloud of this.cloudSprites) {
+      const driftAngle = cloud.angle + elapsedTime * 0.008 * cloud.drift;
+      const driftRadius = cloud.radius + Math.sin(elapsedTime * 0.12 + cloud.phase) * cloud.wobble;
+      cloud.sprite.position.set(
+        this.camera.position.x + Math.cos(driftAngle) * driftRadius,
+        cloud.height,
+        this.camera.position.z + Math.sin(driftAngle) * driftRadius,
+      );
+    }
+  }
+
   updateVitals(dt) {
     if (!this.started) return;
     if (this.hunger > 1) {
@@ -496,10 +598,12 @@ export class Game {
   animate() {
     const dt = Math.min(0.033, this.clock.getDelta());
     const nowMs = performance.now();
+    const elapsedTime = this.clock.elapsedTime;
 
     this.player.update(dt);
     this.updateVitals(dt);
     this.updateSun();
+    this.updateClouds(elapsedTime);
     this.updateSelectionOutline();
     this.updateMining(dt);
 

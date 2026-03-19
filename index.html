@@ -9,11 +9,30 @@
   </head>
   <body>
     <div id="welcome-screen">
+      <div class="welcome-scene">
+        <div class="welcome-sun"></div>
+        <div class="welcome-cloud welcome-cloud--a"></div>
+        <div class="welcome-cloud welcome-cloud--b"></div>
+        <div class="welcome-cloud welcome-cloud--c"></div>
+        <div class="floating-block floating-block--grass"></div>
+        <div class="floating-block floating-block--stone"></div>
+        <div class="floating-block floating-block--sand"></div>
+        <div class="floating-block floating-block--wood"></div>
+        <div class="welcome-ground"></div>
+        <div class="welcome-scanlines"></div>
+      </div>
       <div class="welcome-panel">
         <div class="welcome-kicker">MonkeyCraft Demo</div>
-        <h1 class="welcome-title">MonkeyCraft</h1>
+        <div class="welcome-hero">
+          <div class="welcome-brand">
+            <img src="./assets/brand/monkeycode-logo-colored.png" alt="MonkeyCode AI" class="welcome-brand-logo" />
+          </div>
+          <h1 class="welcome-title">MonkeyCraft</h1>
+        </div>
         <p class="welcome-copy">
-          一个使用 MonkeyCode AI 编程平台制作的网页版 Minecraft 演示 Demo。
+          一个使用
+          <a href="https://monkeycode-ai.com/" target="_blank" rel="noreferrer">MonkeyCode AI</a>
+          编程平台制作的网页版 Minecraft 演示 Demo。
         </p>
         <p class="welcome-copy welcome-copy--small">
           MonkeyCode AI:
@@ -23,10 +42,13 @@
           <button id="start-game-button" class="welcome-button">开始游戏</button>
           <div id="welcome-status" class="welcome-status">等待开始</div>
         </div>
-        <div class="welcome-notes">
-          <span>探索、采集、建造</span>
-          <span>纯前端单机世界</span>
-          <span>点击开始后生成地图</span>
+        <div id="welcome-loading" class="welcome-loading hidden" aria-hidden="true">
+          <div class="welcome-loading-bar">
+            <div class="welcome-loading-fill"></div>
+          </div>
+          <div class="welcome-loading-dots">
+            <span></span><span></span><span></span>
+          </div>
         </div>
       </div>
     </div>

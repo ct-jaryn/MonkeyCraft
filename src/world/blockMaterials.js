@@ -25,20 +25,22 @@ function createFlowerTexture(petalColor) {
   ctx.clearRect(0, 0, size, size);
 
   ctx.fillStyle = "#3f8d3f";
-  ctx.fillRect(7, 6, 2, 8);
+  ctx.fillRect(7, 5, 2, 11);
   ctx.fillStyle = "#5ca54f";
   ctx.fillRect(6, 9, 2, 1);
   ctx.fillRect(8, 10, 2, 1);
+  ctx.fillRect(6, 12, 2, 1);
+  ctx.fillRect(8, 13, 2, 1);
 
   ctx.fillStyle = petalColor;
-  ctx.fillRect(6, 3, 2, 2);
-  ctx.fillRect(8, 3, 2, 2);
-  ctx.fillRect(5, 5, 2, 2);
-  ctx.fillRect(9, 5, 2, 2);
-  ctx.fillRect(7, 5, 2, 2);
+  ctx.fillRect(6, 2, 2, 2);
+  ctx.fillRect(8, 2, 2, 2);
+  ctx.fillRect(5, 4, 2, 2);
+  ctx.fillRect(9, 4, 2, 2);
+  ctx.fillRect(7, 4, 2, 2);
 
   ctx.fillStyle = "#f5d76e";
-  ctx.fillRect(7, 4, 2, 2);
+  ctx.fillRect(7, 3, 2, 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;

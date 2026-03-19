@@ -7,6 +7,7 @@ export class Hud {
     this.welcomeScreenEl = document.getElementById("welcome-screen");
     this.startButtonEl = document.getElementById("start-game-button");
     this.welcomeStatusEl = document.getElementById("welcome-status");
+    this.welcomeLoadingEl = document.getElementById("welcome-loading");
     this.tipsEl = document.getElementById("tips");
     this.statusEl = document.getElementById("status");
     this.hotbarEl = document.getElementById("hotbar");
@@ -44,6 +45,8 @@ export class Hud {
     if (this.welcomeStatusEl) {
       this.welcomeStatusEl.textContent = text;
     }
+    const loading = /正在|创建|生成|加载/.test(text || "");
+    this.welcomeLoadingEl?.classList.toggle("hidden", !loading);
   }
 
   hideWelcome() {

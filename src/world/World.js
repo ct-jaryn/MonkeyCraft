@@ -90,8 +90,8 @@ export class World {
     const material = this.materials[type] || this.materials.flower_red;
     const planeA = new THREE.Mesh(this.plantGeometry, material);
     const planeB = new THREE.Mesh(this.plantGeometry, material);
-    planeA.position.set(0, 0.5, 0);
-    planeB.position.set(0, 0.5, 0);
+    planeA.position.set(0, 0.48, 0);
+    planeB.position.set(0, 0.48, 0);
     planeA.rotation.y = Math.PI / 4;
     planeB.rotation.y = -Math.PI / 4;
     group.add(planeA, planeB);
