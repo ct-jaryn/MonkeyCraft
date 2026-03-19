@@ -22,7 +22,16 @@ export const BLOCKS = {
   sand: { color: 0xd8c07a, solid: true, breakTime: 0.35 },
   wood: { color: 0x8a5a2a, solid: true, breakTime: 0.85 },
   leaves: { color: 0x3f8f45, solid: true, breakTime: 0.2 },
+  oak_log: { color: 0x8a5a2a, solid: true, breakTime: 0.85, drop: "wood" },
+  oak_leaves: { color: 0x3f8f45, solid: true, breakTime: 0.2, drop: "leaves" },
+  birch_log: { color: 0xd7cfb8, solid: true, breakTime: 0.85, drop: "wood" },
+  birch_leaves: { color: 0x87b84d, solid: true, breakTime: 0.2, drop: "leaves" },
   crafting_table: { color: 0x9f6e3a, solid: true, breakTime: 1.0 },
+  short_grass: { color: 0x6ea64d, solid: false, occludes: false, breakTime: 0.03, renderType: "cross" },
+  flower_red: { color: 0xd74444, solid: false, occludes: false, breakTime: 0.05, renderType: "cross" },
+  flower_yellow: { color: 0xe0c23f, solid: false, occludes: false, breakTime: 0.05, renderType: "cross" },
+  flower_blue: { color: 0x4b82d8, solid: false, occludes: false, breakTime: 0.05, renderType: "cross" },
+  flower_white: { color: 0xe9eef2, solid: false, occludes: false, breakTime: 0.05, renderType: "cross" },
 };
 
 export const PLACEABLE_BLOCKS = ["dirt", "grass", "stone", "sand", "wood", "crafting_table"];
@@ -35,7 +44,16 @@ export const BLOCK_LABELS = {
   sand: "沙子",
   wood: "木头",
   leaves: "树叶",
+  oak_log: "橡木",
+  oak_leaves: "橡树叶",
+  birch_log: "桦木",
+  birch_leaves: "桦树叶",
   crafting_table: "合成台",
+  short_grass: "草丛",
+  flower_red: "红花",
+  flower_yellow: "黄花",
+  flower_blue: "蓝花",
+  flower_white: "白花",
 };
 
 export const ITEM_LABELS = {

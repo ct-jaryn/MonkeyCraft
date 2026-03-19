@@ -23,6 +23,7 @@ export class World {
     this.seed = WORLD_CONFIG.seed;
 
     this.cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+    this.plantGeometry = new THREE.PlaneGeometry(1, 1);
     this.materials = createBlockMaterials();
 
     this.activeChunks = new Map();
@@ -71,12 +72,45 @@ export class World {
   }
 
   isBlockExposed(x, y, z) {
+    const type = this.getBlock(x, y, z);
+    if (!type) return false;
+    if (BLOCKS[type]?.renderType === "cross") return true;
+
     for (const [dx, dy, dz] of NEIGHBORS) {
-      if (!this.getBlock(x + dx, y + dy, z + dz)) {
+      const neighbor = this.getBlock(x + dx, y + dy, z + dz);
+      if (!neighbor || BLOCKS[neighbor]?.occludes === false) {
         return true;
       }
     }
     return false;
+  }
+
+  createCrossPlantObject(type, x, y, z) {
+    const group = new THREE.Group();
+    const material = this.materials[type] || this.materials.flower_red;
+    const planeA = new THREE.Mesh(this.plantGeometry, material);
+    const planeB = new THREE.Mesh(this.plantGeometry, material);
+    planeA.position.set(0, 0.5, 0);
+    planeB.position.set(0, 0.5, 0);
+    planeA.rotation.y = Math.PI / 4;
+    planeB.rotation.y = -Math.PI / 4;
+    group.add(planeA, planeB);
+    group.position.set(x + 0.5, y, z + 0.5);
+    group.userData.blockPos = { x, y, z };
+    group.userData.blockType = type;
+    return group;
+  }
+
+  createBlockObject(type, x, y, z) {
+    if (BLOCKS[type]?.renderType === "cross") {
+      return this.createCrossPlantObject(type, x, y, z);
+    }
+
+    const mesh = new THREE.Mesh(this.cubeGeometry, this.materials[type] || this.materials.dirt);
+    mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+    mesh.userData.blockPos = { x, y, z };
+    mesh.userData.blockType = type;
+    return mesh;
   }
 
   ensureBlockMesh(x, y, z, type) {
@@ -95,13 +129,15 @@ export class World {
       return;
     }
 
-    if (existing) return;
+    if (existing?.userData?.blockType === type) return;
+    if (existing) {
+      this.scene.remove(existing);
+      chunk.meshes.delete(globalKey);
+    }
 
-    const mesh = new THREE.Mesh(this.cubeGeometry, this.materials[type] || this.materials.dirt);
-    mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
-    mesh.userData.blockPos = { x, y, z };
-    this.scene.add(mesh);
-    chunk.meshes.set(globalKey, mesh);
+    const obj = this.createBlockObject(type, x, y, z);
+    this.scene.add(obj);
+    chunk.meshes.set(globalKey, obj);
   }
 
   removeBlockMesh(x, y, z) {
@@ -180,15 +216,35 @@ export class World {
   }
 
   terrainHeight(x, z) {
-    const a = Math.sin((x + this.seed) * 0.16) * 2.2;
-    const b = Math.cos((z - this.seed) * 0.14) * 2.0;
-    const c = Math.sin((x + z) * 0.08) * 1.6;
-    const h = Math.floor(8 + a + b + c);
-    return Math.max(2, Math.min(this.maxHeight - 2, h));
+    const lowlands =
+      Math.sin((x + this.seed) * 0.12) * 2.8 +
+      Math.cos((z - this.seed) * 0.11) * 2.5 +
+      Math.sin((x + z) * 0.05) * 2.2;
+    const hills =
+      Math.sin((x - this.seed * 0.4) * 0.045) * 6.0 +
+      Math.cos((z + this.seed * 0.3) * 0.05) * 5.5;
+    const mountainMask = Math.max(
+      0,
+      Math.sin((x + this.seed * 0.2) * 0.018) +
+        Math.cos((z - this.seed * 0.15) * 0.02) -
+        0.1
+    );
+    const ridges =
+      Math.abs(Math.sin((x + z + this.seed) * 0.022)) * 10 +
+      Math.abs(Math.cos((x - z - this.seed) * 0.018)) * 8;
+    const h = Math.floor(12 + lowlands + hills + mountainMask * ridges);
+    return Math.max(4, Math.min(this.maxHeight - 3, h));
   }
 
   hash2(x, z) {
     const v = Math.sin((x + this.seed * 13.37) * 127.1 + (z - this.seed * 7.11) * 311.7) * 43758.5453;
+    return v - Math.floor(v);
+  }
+
+  noise3(x, y, z) {
+    const v =
+      Math.sin((x + this.seed * 0.71) * 12.9898 + y * 78.233 + (z - this.seed * 0.37) * 37.719) *
+      43758.5453;
     return v - Math.floor(v);
   }
 
@@ -199,37 +255,222 @@ export class World {
     return "grass";
   }
 
-  tryGenerateTree(blocks, lx, height, lz, gx, gz) {
-    if (lx < 3 || lz < 3 || lx > this.chunkSize - 4 || lz > this.chunkSize - 4) return;
-    if (this.surfaceType(gx, gz) !== "grass") return;
+  shouldCarveCave(x, y, z, surfaceHeight) {
+    if (y <= 2 || y >= surfaceHeight - 3) return false;
+    const tunnelA = this.noise3(x * 0.085, y * 0.14, z * 0.085);
+    const tunnelB = this.noise3(x * 0.045 + 31, y * 0.12 + 17, z * 0.045 - 29);
+    const worm = Math.abs(Math.sin(x * 0.09 + z * 0.07 + y * 0.22 + this.seed * 0.01));
+    return tunnelA > 0.79 && tunnelB > 0.7 && worm > 0.42;
+  }
+
+  flowerTypeAt(x, z) {
+    const palette = ["flower_red", "flower_yellow", "flower_blue", "flower_white"];
+    const idx = Math.floor(this.hash2(x * 1.9 + 11, z * 2.3 - 7) * palette.length);
+    return palette[Math.max(0, Math.min(palette.length - 1, idx))];
+  }
+
+  isFlatEnoughForFlower(x, z, height) {
+    const neighborHeights = [
+      this.terrainHeight(x + 1, z),
+      this.terrainHeight(x - 1, z),
+      this.terrainHeight(x, z + 1),
+      this.terrainHeight(x, z - 1),
+    ];
+    return neighborHeights.every((neighborHeight) => Math.abs(neighborHeight - height) <= 1);
+  }
+
+  isFlatEnoughForGrass(x, z, height) {
+    const neighborHeights = [
+      this.terrainHeight(x + 1, z),
+      this.terrainHeight(x - 1, z),
+      this.terrainHeight(x, z + 1),
+      this.terrainHeight(x, z - 1),
+    ];
+    return neighborHeights.every((neighborHeight) => Math.abs(neighborHeight - height) <= 2);
+  }
+
+  isFlatEnoughForSpawn(x, z, height) {
+    const neighborHeights = [
+      this.terrainHeight(x + 1, z),
+      this.terrainHeight(x - 1, z),
+      this.terrainHeight(x, z + 1),
+      this.terrainHeight(x, z - 1),
+      this.terrainHeight(x + 1, z + 1),
+      this.terrainHeight(x - 1, z - 1),
+      this.terrainHeight(x + 1, z - 1),
+      this.terrainHeight(x - 1, z + 1),
+    ];
+    return neighborHeights.every((neighborHeight) => Math.abs(neighborHeight - height) <= 1);
+  }
+
+  shouldGenerateGrassAt(x, z, height, surface) {
+    if (surface !== "grass") return false;
+    if (height + 1 >= this.maxHeight) return false;
+    if (!this.isFlatEnoughForGrass(x, z, height)) return false;
+
+    const patchNoise =
+      Math.sin((x + this.seed * 0.09) * 0.11) +
+      Math.cos((z - this.seed * 0.12) * 0.1) +
+      Math.sin((x + z) * 0.06);
+    if (patchNoise < 1.15) return false;
+
+    const density = this.hash2(x + 23, z - 31);
+    const edgeScatter = this.hash2(x * 2.1 - 7, z * 1.7 + 19);
+    if (density < 0.6) return false;
+    if (patchNoise < 1.45 && edgeScatter < 0.72) return false;
+    return true;
+  }
+
+  tryGenerateGrass(blocks, lx, height, lz, gx, gz, surface) {
+    if (blocks.has(localKey(lx, height + 1, lz))) return;
+    if (!this.shouldGenerateGrassAt(gx, gz, height, surface)) return;
+
+    blocks.set(localKey(lx, height + 1, lz), "short_grass");
+  }
+
+  shouldGenerateFlowerAt(x, z, height, surface) {
+    if (surface !== "grass") return false;
+    if (height + 1 >= this.maxHeight) return false;
+    if (!this.isFlatEnoughForFlower(x, z, height)) return false;
+
+    const meadowNoise =
+      Math.sin((x - this.seed * 0.18) * 0.08) +
+      Math.cos((z + this.seed * 0.14) * 0.09);
+    if (meadowNoise < 0.85) return false;
+    if (this.hash2(x - 13, z + 17) < 0.965) return false;
+    if (this.hash2(x + 3, z - 5) > 0.92) return false;
+    return true;
+  }
+
+  tryGenerateFlower(blocks, lx, height, lz, gx, gz, surface) {
+    if (blocks.has(localKey(lx, height + 1, lz))) return;
+    if (!this.shouldGenerateFlowerAt(gx, gz, height, surface)) return;
+
+    blocks.set(localKey(lx, height + 1, lz), this.flowerTypeAt(gx, gz));
+  }
+
+  getTreeDescriptor(x, z, height, surface = this.surfaceType(x, z)) {
+    if (surface !== "grass") return null;
     const groveNoise =
-      Math.sin((gx + this.seed * 0.7) * 0.035) +
-      Math.cos((gz - this.seed * 0.4) * 0.04);
-    if (groveNoise < 0.45) return;
+      Math.sin((x + this.seed * 0.7) * 0.035) +
+      Math.cos((z - this.seed * 0.4) * 0.04);
+    if (groveNoise < 0.45) return null;
 
-    const treeChance = this.hash2(gx, gz);
-    if (treeChance < 0.975) return;
+    const treeChance = this.hash2(x, z);
+    if (treeChance < 0.975) return null;
+    if (this.hash2(x + 1, z) > 0.965) return null;
+    if (this.hash2(x, z + 1) > 0.965) return null;
 
-    // Keep a little breathing room between trunks so forests do not become walls.
-    if (this.hash2(gx + 1, gz) > 0.965) return;
-    if (this.hash2(gx, gz + 1) > 0.965) return;
-
-    const trunkHeight = 3 + Math.floor(this.hash2(gx + 17, gz - 19) * 4);
+    const trunkHeight = 3 + Math.floor(this.hash2(x + 17, z - 19) * 4);
     const canopyRadius = trunkHeight >= 6 ? 3 : 2;
     const leafBaseY = height + trunkHeight - (canopyRadius >= 3 ? 2 : 1);
     const leafTopY = height + trunkHeight + 1;
-    if (leafTopY + 1 >= this.maxHeight) return;
+    if (leafTopY + 1 >= this.maxHeight) return null;
 
-    for (let dy = 1; dy <= trunkHeight; dy++) {
-      blocks.set(localKey(lx, height + dy, lz), "wood");
+    const birchBiomeNoise =
+      Math.sin((x - this.seed * 0.31) * 0.028) +
+      Math.cos((z + this.seed * 0.23) * 0.031);
+    const isBirch = birchBiomeNoise > 1.1 && this.hash2(x - 41, z + 13) > 0.35;
+    const logType = isBirch ? "birch_log" : "oak_log";
+    const leavesType = isBirch ? "birch_leaves" : "oak_leaves";
+
+    return { x, z, height, trunkHeight, canopyRadius, leafBaseY, leafTopY, logType, leavesType };
+  }
+
+  treeBlocksColumn(tree, targetX, targetZ, minY, maxY) {
+    if (!tree) return false;
+    if (tree.x === targetX && tree.z === targetZ) {
+      const trunkMinY = tree.height + 1;
+      const trunkMaxY = tree.height + tree.trunkHeight;
+      if (trunkMaxY >= minY && trunkMinY <= maxY) return true;
     }
 
-    for (let ty = leafBaseY; ty <= leafTopY; ty++) {
-      const heightRatio = (ty - leafBaseY) / Math.max(1, leafTopY - leafBaseY);
+    for (let ty = tree.leafBaseY; ty <= tree.leafTopY; ty++) {
+      if (ty < minY || ty > maxY) continue;
+      const heightRatio = (ty - tree.leafBaseY) / Math.max(1, tree.leafTopY - tree.leafBaseY);
       const radius =
-        canopyRadius -
+        tree.canopyRadius -
         (heightRatio > 0.7 ? 1 : 0) -
-        (heightRatio < 0.15 && canopyRadius > 2 ? 1 : 0);
+        (heightRatio < 0.15 && tree.canopyRadius > 2 ? 1 : 0);
+
+      for (let dx = -radius; dx <= radius; dx++) {
+        for (let dz = -radius; dz <= radius; dz++) {
+          const edgeBias = Math.abs(dx) + Math.abs(dz);
+          const skipChance = this.hash2(tree.x + dx * 13 + ty, tree.z + dz * 17 - ty);
+          if (edgeBias > radius + 1) continue;
+          if (edgeBias === radius + 1 && skipChance < 0.8) continue;
+          if (edgeBias === radius && skipChance < 0.22) continue;
+          if (tree.x + dx === targetX && tree.z + dz === targetZ) return true;
+        }
+      }
+    }
+
+    if (tree.trunkHeight >= 5 && this.hash2(tree.x - 9, tree.z + 5) > 0.45) {
+      const crownY = tree.height + tree.trunkHeight + 1;
+      if (crownY >= minY && crownY <= maxY && tree.x === targetX && tree.z === targetZ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  isSpawnSafeAt(x, z) {
+    const height = this.terrainHeight(x, z);
+    const surface = this.surfaceType(x, z);
+    if (surface !== "grass") return false;
+    if (!this.isFlatEnoughForSpawn(x, z, height)) return false;
+    if (this.shouldGenerateGrassAt(x, z, height, surface)) return false;
+    if (this.shouldGenerateFlowerAt(x, z, height, surface)) return false;
+
+    const headMinY = height + 1;
+    const headMaxY = height + 4;
+    for (let dx = -4; dx <= 4; dx++) {
+      for (let dz = -4; dz <= 4; dz++) {
+        const treeHeight = this.terrainHeight(x + dx, z + dz);
+        const tree = this.getTreeDescriptor(x + dx, z + dz, treeHeight, this.surfaceType(x + dx, z + dz));
+        if (this.treeBlocksColumn(tree, x, z, headMinY, headMaxY)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  findSpawnPoint() {
+    for (let radius = 0; radius <= 48; radius++) {
+      for (let dz = -radius; dz <= radius; dz++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+          const x = dx;
+          const z = dz;
+          if (!this.isSpawnSafeAt(x, z)) continue;
+          const y = this.terrainHeight(x, z) + 1;
+          return { x: x + 0.5, y, z: z + 0.5 };
+        }
+      }
+    }
+
+    const fallbackY = this.terrainHeight(0, 0) + 1;
+    return { x: 0.5, y: fallbackY, z: 0.5 };
+  }
+
+  tryGenerateTree(blocks, lx, height, lz, gx, gz) {
+    if (lx < 3 || lz < 3 || lx > this.chunkSize - 4 || lz > this.chunkSize - 4) return;
+    const tree = this.getTreeDescriptor(gx, gz, height);
+    if (!tree) return;
+
+    for (let dy = 1; dy <= tree.trunkHeight; dy++) {
+      blocks.set(localKey(lx, height + dy, lz), tree.logType);
+    }
+
+    for (let ty = tree.leafBaseY; ty <= tree.leafTopY; ty++) {
+      const heightRatio = (ty - tree.leafBaseY) / Math.max(1, tree.leafTopY - tree.leafBaseY);
+      const radius =
+        tree.canopyRadius -
+        (heightRatio > 0.7 ? 1 : 0) -
+        (heightRatio < 0.15 && tree.canopyRadius > 2 ? 1 : 0);
 
       for (let dx = -radius; dx <= radius; dx++) {
         for (let dz = -radius; dz <= radius; dz++) {
@@ -245,16 +486,16 @@ export class World {
           if (ty < 0 || ty >= this.maxHeight) continue;
           const key = localKey(tx, ty, tz);
           if (!blocks.has(key)) {
-            blocks.set(key, "leaves");
+            blocks.set(key, tree.leavesType);
           }
         }
       }
     }
 
-    if (trunkHeight >= 5 && this.hash2(gx - 9, gz + 5) > 0.45) {
-      const crownY = height + trunkHeight + 1;
+    if (tree.trunkHeight >= 5 && this.hash2(gx - 9, gz + 5) > 0.45) {
+      const crownY = height + tree.trunkHeight + 1;
       if (crownY < this.maxHeight && !blocks.has(localKey(lx, crownY, lz))) {
-        blocks.set(localKey(lx, crownY, lz), "leaves");
+        blocks.set(localKey(lx, crownY, lz), tree.leavesType);
       }
     }
   }
@@ -275,9 +516,12 @@ export class World {
           let type = "dirt";
           if (y === height) type = surface;
           else if (y < height - 2) type = "stone";
+          if (type === "stone" && this.shouldCarveCave(gx, y, gz, height)) continue;
           blocks.set(localKey(lx, y, lz), type);
         }
         this.tryGenerateTree(blocks, lx, height, lz, gx, gz);
+        this.tryGenerateGrass(blocks, lx, height, lz, gx, gz, surface);
+        this.tryGenerateFlower(blocks, lx, height, lz, gx, gz, surface);
       }
     }
 

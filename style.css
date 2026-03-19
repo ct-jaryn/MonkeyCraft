@@ -75,11 +75,26 @@ canvas {
 }
 
 .welcome-copy {
-  max-width: 44ch;
+  max-width: 60ch;
   margin: 18px 0 22px;
   color: #d5e8d0;
   font-size: 15px;
   line-height: 1.6;
+}
+
+.welcome-copy--small {
+  margin-top: -8px;
+  font-size: 13px;
+  color: #c9e4c9;
+}
+
+.welcome-copy--small a {
+  color: #f5ffb7;
+  text-decoration: none;
+}
+
+.welcome-copy--small a:hover {
+  text-decoration: underline;
 }
 
 .welcome-actions {
@@ -139,6 +154,10 @@ canvas {
   pointer-events: none;
 }
 
+#hud.hidden {
+  display: none;
+}
+
 #tips {
   position: absolute;
   top: 14px;
@@ -156,16 +175,19 @@ canvas {
 
 #status {
   position: absolute;
-  bottom: 10px;
+  top: 10px;
   left: 10px;
-  padding: 6px 10px;
-  border: 2px solid #1d1d1d;
-  border-radius: 2px;
-  color: #f3f3f3;
-  background: rgb(38 38 38 / 88%);
-  font-size: 12px;
-  max-width: min(88vw, 900px);
-  line-height: 1.35;
+  padding: 0;
+  border: 0;
+  color: #ffffff;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  text-shadow:
+    1px 1px 0 #000,
+    -1px 1px 0 #000,
+    1px -1px 0 #000,
+    -1px -1px 0 #000;
 }
 
 #crosshair {
@@ -196,6 +218,139 @@ canvas {
   top: 7px;
   width: 16px;
   height: 2px;
+}
+
+#hotbar-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+}
+
+#hotbar-label {
+  min-height: 18px;
+  color: #fff9c9;
+  font-size: 14px;
+  text-shadow:
+    0 2px 0 #000,
+    0 0 8px rgb(0 0 0 / 45%);
+  letter-spacing: 0.4px;
+}
+
+#vitals {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.vital-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.vital-icon {
+  width: 16px;
+  height: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 55%));
+}
+
+.heart {
+  background-image: url("./assets/minecraft/textures/gui/sprites/hud/heart/container.png");
+}
+
+.heart.is-filled {
+  background-image: url("./assets/minecraft/textures/gui/sprites/hud/heart/full.png");
+}
+
+.hunger {
+  background-image: url("./assets/minecraft/textures/gui/sprites/hud/food_empty.png");
+}
+
+.hunger.is-filled {
+  background-image: url("./assets/minecraft/textures/gui/sprites/hud/food_full.png");
+}
+
+#hotbar-xp {
+  width: 100%;
+  height: 8px;
+  border: 2px solid #0d1117;
+  background: rgb(6 19 11 / 85%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 10%),
+    0 2px 0 rgb(0 0 0 / 35%);
+}
+
+#hotbar-xp-fill {
+  height: 100%;
+  width: 8%;
+  background: linear-gradient(180deg, #85ff63 0%, #2cc62f 100%);
+  box-shadow: 0 0 8px rgb(95 255 103 / 35%);
+}
+
+#hotbar {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0;
+  width: 364px;
+  height: 44px;
+  padding: 2px 3px;
+  background: url("./assets/minecraft/textures/gui/sprites/hud/hotbar.png") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 30%));
+  image-rendering: pixelated;
+}
+
+.hotbar-slot {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.hotbar-slot.is-selected {
+  background: url("./assets/minecraft/textures/gui/sprites/hud/hotbar_selection.png") center / 100% 100% no-repeat;
+}
+
+.hotbar-slot.is-empty {
+  opacity: 0.7;
+}
+
+.hotbar-icon {
+  position: absolute;
+  inset: 6px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+  display: grid;
+  place-items: center;
+  color: #eef8ff;
+  font-size: 10px;
+  font-weight: 700;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.hotbar-count {
+  position: absolute;
+  right: 4px;
+  bottom: 1px;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1;
+  text-shadow:
+    1px 1px 0 #000,
+    -1px 1px 0 #000,
+    1px -1px 0 #000,
+    -1px -1px 0 #000;
 }
 
 #toolbox {
@@ -358,5 +513,41 @@ canvas {
 
   .slot-grid {
     grid-template-columns: repeat(4, minmax(48px, 1fr));
+  }
+
+  #status {
+    font-size: 14px;
+  }
+
+  #hotbar {
+    width: 274px;
+    height: 33px;
+    padding: 1px 2px;
+  }
+
+  .hotbar-slot {
+    width: 30px;
+    height: 30px;
+  }
+
+  .hotbar-icon {
+    inset: 4px;
+  }
+
+  .hotbar-count {
+    font-size: 12px;
+  }
+
+  #hotbar-xp {
+    width: 100%;
+  }
+
+  #vitals {
+    width: 100%;
+  }
+
+  .vital-icon {
+    width: 14px;
+    height: 14px;
   }
 }

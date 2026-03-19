@@ -16,6 +16,39 @@ function mat(texture, extra = {}) {
   return new THREE.MeshLambertMaterial({ map: texture, ...extra });
 }
 
+function createFlowerTexture(petalColor) {
+  const size = 16;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, size, size);
+
+  ctx.fillStyle = "#3f8d3f";
+  ctx.fillRect(7, 6, 2, 8);
+  ctx.fillStyle = "#5ca54f";
+  ctx.fillRect(6, 9, 2, 1);
+  ctx.fillRect(8, 10, 2, 1);
+
+  ctx.fillStyle = petalColor;
+  ctx.fillRect(6, 3, 2, 2);
+  ctx.fillRect(8, 3, 2, 2);
+  ctx.fillRect(5, 5, 2, 2);
+  ctx.fillRect(9, 5, 2, 2);
+  ctx.fillRect(7, 5, 2, 2);
+
+  ctx.fillStyle = "#f5d76e";
+  ctx.fillRect(7, 4, 2, 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestMipmapNearestFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
+}
+
 export function createBlockMaterials() {
   const bedrock = loadTexture(
     "../../assets/minecraft/textures/block/bedrock.png"
@@ -36,6 +69,18 @@ export function createBlockMaterials() {
   const leaves = loadTexture(
     "../../assets/minecraft/textures/block/oak_leaves.png"
   );
+  const birchWoodSide = loadTexture(
+    "../../assets/minecraft/textures/block/birch_log.png"
+  );
+  const birchWoodTop = loadTexture(
+    "../../assets/minecraft/textures/block/birch_log_top.png"
+  );
+  const birchLeaves = loadTexture(
+    "../../assets/minecraft/textures/block/birch_leaves.png"
+  );
+  const shortGrass = loadTexture(
+    "../../assets/minecraft/textures/block/short_grass.png"
+  );
   const craftingTop = loadTexture(
     "../../assets/minecraft/textures/block/crafting_table_top.png"
   );
@@ -47,6 +92,15 @@ export function createBlockMaterials() {
   );
   const grassTint = new THREE.Color(0x91bd59);
   const leavesTint = new THREE.Color(0x77ab2f);
+  const flowerRed = createFlowerTexture("#d84b55");
+  const flowerYellow = createFlowerTexture("#efcf52");
+  const flowerBlue = createFlowerTexture("#5d82de");
+  const flowerWhite = createFlowerTexture("#f0f3f8");
+  const plantExtra = {
+    transparent: true,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide,
+  };
 
   return {
     bedrock: mat(bedrock),
@@ -69,6 +123,34 @@ export function createBlockMaterials() {
       mat(woodSide),
       mat(woodSide),
     ],
+    oak_log: [
+      mat(woodSide),
+      mat(woodSide),
+      mat(woodTop),
+      mat(woodTop),
+      mat(woodSide),
+      mat(woodSide),
+    ],
+    oak_leaves: mat(leaves, {
+      color: leavesTint,
+      transparent: true,
+      alphaTest: 0.5,
+      side: THREE.DoubleSide,
+    }),
+    birch_log: [
+      mat(birchWoodSide),
+      mat(birchWoodSide),
+      mat(birchWoodTop),
+      mat(birchWoodTop),
+      mat(birchWoodSide),
+      mat(birchWoodSide),
+    ],
+    birch_leaves: mat(birchLeaves, {
+      color: new THREE.Color(0x8ebf4d),
+      transparent: true,
+      alphaTest: 0.5,
+      side: THREE.DoubleSide,
+    }),
     crafting_table: [
       mat(craftingSide),
       mat(craftingSide),
@@ -83,5 +165,10 @@ export function createBlockMaterials() {
       alphaTest: 0.5,
       side: THREE.DoubleSide,
     }),
+    short_grass: mat(shortGrass, { ...plantExtra, color: grassTint }),
+    flower_red: mat(flowerRed, plantExtra),
+    flower_yellow: mat(flowerYellow, plantExtra),
+    flower_blue: mat(flowerBlue, plantExtra),
+    flower_white: mat(flowerWhite, plantExtra),
   };
 }

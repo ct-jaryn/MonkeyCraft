@@ -1,5 +1,5 @@
 import * as THREE from "../lib/three.js";
-import { BLOCK_LABELS, BLOCKS, ITEM_LABELS, PLACEABLE_BLOCKS, RECIPES } from "../constants.js";
+import { BLOCK_LABELS, BLOCKS, ITEM_LABELS, PLACEABLE_BLOCKS, RECIPES, WORLD_CONFIG } from "../constants.js";
 import { SaveStore } from "../storage/saveStore.js";
 import { World } from "../world/World.js";
 import { PlayerController } from "../player/PlayerController.js";
@@ -10,9 +10,13 @@ import { createCrackTextures } from "../world/crackTextures.js";
 
 export class Game {
   constructor() {
+    const skyColor = 0x9edbff;
+    const fogEnd = WORLD_CONFIG.chunkSize * (WORLD_CONFIG.renderDistance * 2 + 1) * 0.64;
+    const fogStart = Math.max(14, fogEnd * 0.3);
+
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x9edbff);
-    this.scene.fog = new THREE.Fog(0x9edbff, 70, 220);
+    this.scene.background = new THREE.Color(skyColor);
+    this.scene.fog = new THREE.Fog(skyColor, fogStart, fogEnd);
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 300);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -39,6 +43,11 @@ export class Game {
     this.selectedBlockIndex = 0;
     this.currentLookTarget = null;
     this.leftMouseDown = false;
+    this.maxHealth = 10;
+    this.health = 10;
+    this.maxHunger = 10;
+    this.hunger = 10;
+    this.hungerDrainTimer = 0;
     this.mining = {
       active: false,
       targetKey: "",
@@ -164,20 +173,24 @@ export class Game {
     return Math.floor(Math.random() * 2147483647);
   }
 
-  resetRunState() {
+  resetRunState(spawn = { x: 0.5, y: 16, z: 0.5 }) {
     this.world.resetLoadedChunks();
-    this.player.pos.set(0, 16, 0);
+    this.player.pos.set(spawn.x, spawn.y, spawn.z);
     this.player.vel.set(0, 0, 0);
     this.player.yaw = 0;
     this.player.pitch = 0;
     this.player.onGround = false;
     this.inventory.clear();
+    this.health = this.maxHealth;
+    this.hunger = this.maxHunger;
+    this.hungerDrainTimer = 0;
     this.selectedBlockIndex = 0;
     this.currentLookTarget = null;
     this.leftMouseDown = false;
     this.interactionCooldown = 0;
     this.stopMining();
     this.selectionOutline.visible = false;
+    this.hud.setVitals({ health: this.health, hunger: this.hunger });
   }
 
   handleBlockHotkeys(event) {
@@ -186,6 +199,7 @@ export class Game {
     if (Number.isNaN(idx)) return;
     if (idx < 0 || idx >= PLACEABLE_BLOCKS.length) return;
     this.selectedBlockIndex = idx;
+    this.hud.setSelectedHotbar(idx);
     this.hud.setSelectedBlock(BLOCK_LABELS[PLACEABLE_BLOCKS[this.selectedBlockIndex]] || PLACEABLE_BLOCKS[this.selectedBlockIndex]);
   }
 
@@ -350,7 +364,8 @@ export class Game {
     const minedType = this.mining.blockType;
     this.world.setBlock(p.x, p.y, p.z, null);
     if (minedType) {
-      this.inventory.add(minedType, 1);
+      const dropType = BLOCKS[minedType]?.drop || minedType;
+      this.inventory.add(dropType, 1);
       this.refreshInventoryUI();
     }
     this.sfx.playBreak();
@@ -403,6 +418,20 @@ export class Game {
     this.sunSprite.position.copy(sunPosition);
   }
 
+  updateVitals(dt) {
+    if (!this.started) return;
+    if (this.hunger > 1) {
+      this.hungerDrainTimer += dt;
+      while (this.hunger > 1 && this.hungerDrainTimer >= 60) {
+        this.hunger -= 1;
+        this.hungerDrainTimer -= 60;
+      }
+    } else {
+      this.hungerDrainTimer = 0;
+    }
+    this.hud.setVitals({ health: this.health, hunger: this.hunger });
+  }
+
   onResize() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -449,14 +478,16 @@ export class Game {
     this.hud.setWelcomeStatus("正在创建新世界...");
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await this.saveStore.clearAll();
-    this.resetRunState();
     this.world.setSeed(this.createRandomSeed());
+    const spawn = this.world.findSpawnPoint();
+    this.resetRunState(spawn);
     this.hud.setWelcomeStatus("正在生成地图...");
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await this.world.updateStreaming(this.player.pos);
     this.started = true;
     this.hud.hideWelcome();
     this.hud.setPointerLock(false);
+    this.hud.setSelectedHotbar(this.selectedBlockIndex);
     this.hud.setSelectedBlock(BLOCK_LABELS[PLACEABLE_BLOCKS[this.selectedBlockIndex]]);
     this.refreshInventoryUI();
     this.animate();
@@ -467,6 +498,7 @@ export class Game {
     const nowMs = performance.now();
 
     this.player.update(dt);
+    this.updateVitals(dt);
     this.updateSun();
     this.updateSelectionOutline();
     this.updateMining(dt);
