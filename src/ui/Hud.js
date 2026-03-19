@@ -16,8 +16,12 @@ export class Hud {
     this.healthBarEl = document.getElementById("health-bar");
     this.hungerBarEl = document.getElementById("hunger-bar");
     this.toolboxEl = document.getElementById("toolbox");
+    this.playerCanvasEl = document.getElementById("inventory-player-canvas");
     this.inventoryListEl = document.getElementById("inventory-list");
+    this.inventoryHotbarEl = document.getElementById("inventory-hotbar-grid");
     this.recipeListEl = document.getElementById("recipe-list");
+    this.recipePanelEl = document.getElementById("recipe-panel");
+    this.recipeBookToggleEl = document.getElementById("recipe-book-toggle");
     this.selectedLabel = "泥土";
     this.selectedHotbarIndex = 0;
     this.miningLabel = "";
@@ -27,9 +31,41 @@ export class Hud {
     this.toolboxOpen = false;
     this.health = 10;
     this.hunger = 10;
+    this.recipePanelOpen = false;
 
+    this.recipeBookToggleEl?.addEventListener("click", () => {
+      this.recipePanelOpen = !this.recipePanelOpen;
+      this.recipePanelEl?.classList.toggle("hidden", !this.recipePanelOpen);
+    });
+
+    this.renderPlayerPreview();
     this.renderHotbar({});
     this.renderVitals();
+  }
+
+  renderPlayerPreview() {
+    if (!this.playerCanvasEl) return;
+    const canvas = this.playerCanvasEl;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const img = new Image();
+    img.src = new URL("../../assets/minecraft/textures/entity/player/wide/steve.png", import.meta.url).href;
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
+
+      const draw = (sx, sy, sw, sh, dx, dy, dw, dh) => {
+        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+      };
+
+      draw(8, 8, 8, 8, 42, 8, 56, 56);
+      draw(20, 20, 8, 12, 38, 62, 64, 82);
+      draw(44, 20, 4, 12, 14, 62, 24, 82);
+      draw(44, 20, 4, 12, 102, 62, 24, 82);
+      draw(4, 20, 4, 12, 44, 140, 24, 72);
+      draw(4, 20, 4, 12, 72, 140, 24, 72);
+    };
   }
 
   waitForStart(onStart) {
@@ -90,43 +126,22 @@ export class Hud {
   setInventory(items, labels) {
     if (!this.inventoryListEl) return;
     const entries = Object.entries(items || {}).filter(([, count]) => count > 0);
-    this.inventoryListEl.innerHTML = "";
+    const sortedEntries = entries.sort((a, b) => a[0].localeCompare(b[0], "zh-CN"));
 
     if (entries.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "toolbox-empty";
-      empty.textContent = "背包为空，先去挖点方块。";
-      this.inventoryListEl.appendChild(empty);
       this.inventorySummary = "背包空";
+      this.renderInventorySlots([]);
       this.renderHotbar({});
       return;
     }
 
-    const grid = document.createElement("div");
-    grid.className = "slot-grid";
-
     const summary = [];
-    for (const [id, count] of entries) {
-      const row = document.createElement("div");
-      row.className = "slot-item";
+    for (const [id, count] of sortedEntries) {
       const name = labels?.[id] || id;
-      row.title = `${name} x${count}`;
-
-      const badge = document.createElement("div");
-      badge.className = "slot-badge";
-      badge.textContent = name.slice(0, 2).toUpperCase();
-
-      const amount = document.createElement("div");
-      amount.className = "slot-count";
-      amount.textContent = String(count);
-
-      row.appendChild(badge);
-      row.appendChild(amount);
-      grid.appendChild(row);
       summary.push(`${name}:${count}`);
     }
-    this.inventoryListEl.appendChild(grid);
     this.inventorySummary = summary.slice(0, 4).join(" ");
+    this.renderInventorySlots(sortedEntries);
     this.renderHotbar(items || {});
   }
 
@@ -167,7 +182,56 @@ export class Hud {
   toggleToolbox() {
     this.toolboxOpen = !this.toolboxOpen;
     this.toolboxEl?.classList.toggle("hidden", !this.toolboxOpen);
+    const crosshairEl = document.getElementById("crosshair");
+    crosshairEl?.classList.toggle("hidden", this.toolboxOpen);
+    if (!this.toolboxOpen) {
+      this.recipePanelOpen = false;
+      this.recipePanelEl?.classList.add("hidden");
+    }
     return this.toolboxOpen;
+  }
+
+  renderInventorySlots(entries) {
+    if (!this.inventoryListEl || !this.inventoryHotbarEl) return;
+
+    const storageEntries = entries.slice(0, 27);
+    const hotbarEntries = entries.slice(27, 36);
+
+    this.inventoryListEl.innerHTML = "";
+    this.inventoryHotbarEl.innerHTML = "";
+
+    this.fillInventoryGrid(this.inventoryListEl, storageEntries, 27);
+    this.fillInventoryGrid(this.inventoryHotbarEl, hotbarEntries, 9);
+  }
+
+  fillInventoryGrid(container, entries, totalSlots) {
+    for (let i = 0; i < totalSlots; i += 1) {
+      const entry = entries[i];
+      const slot = document.createElement("div");
+      slot.className = entry ? "inventory-item-slot" : "inventory-empty-slot";
+
+      if (entry) {
+        const [itemId, count] = entry;
+        const icon = document.createElement("div");
+        icon.className = "inventory-item-icon";
+        const iconDef = resolveHotbarIcon(itemId);
+        if (iconDef?.url) {
+          icon.style.backgroundImage = `url("${iconDef.url}")`;
+          if (iconDef.tint === "grass") {
+            icon.style.filter = "hue-rotate(-8deg) saturate(1.1) brightness(1.02)";
+          }
+        }
+
+        const amount = document.createElement("div");
+        amount.className = "inventory-item-count";
+        amount.textContent = String(count);
+
+        slot.appendChild(icon);
+        slot.appendChild(amount);
+      }
+
+      container.appendChild(slot);
+    }
   }
 
   renderHotbar(items = null) {

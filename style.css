@@ -415,6 +415,10 @@ canvas {
   transform: translate(-50%, -50%);
 }
 
+#crosshair.hidden {
+  display: none;
+}
+
 #crosshair::before,
 #crosshair::after {
   content: "";
@@ -578,95 +582,303 @@ canvas {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: min(92vw, 760px);
-  max-height: 78vh;
-  overflow: auto;
-  border: 3px solid #151515;
-  box-shadow:
-    inset 0 0 0 3px #5f5f5f,
-    0 16px 48px rgb(0 0 0 / 55%);
-  background: linear-gradient(180deg, #b8b8b8 0%, #9a9a9a 100%);
-  color: #202020;
+  width: min(68vw, 460px);
+  aspect-ratio: 176 / 166;
   pointer-events: auto;
   image-rendering: pixelated;
+  color: #202020;
 }
 
 #toolbox.hidden {
   display: none;
 }
 
-.toolbox-title {
-  padding: 12px 14px 10px;
-  border-bottom: 3px solid #5a5a5a;
-  color: #101010;
-  font-weight: 700;
-  font-size: 15px;
-  text-shadow: 1px 1px 0 rgb(255 255 255 / 20%);
-}
-
-.toolbox-grid {
-  display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  gap: 14px;
-  padding: 14px;
-}
-
-.toolbox-subtitle {
-  margin-bottom: 10px;
-  font-size: 13px;
-  color: #171717;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.toolbox-list {
-  display: grid;
-  gap: 8px;
-}
-
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(48px, 1fr));
-  gap: 8px;
-}
-
-.slot-item {
+.inventory-screen {
   position: relative;
-  aspect-ratio: 1;
-  border: 2px solid #2e2e2e;
-  box-shadow: inset 0 0 0 2px #7c7c7c;
-  background: linear-gradient(180deg, #8f8f8f 0%, #7b7b7b 100%);
-  display: grid;
-  place-items: center;
+  width: 100%;
+  height: 100%;
+  background-image: url("./assets/minecraft/textures/gui/container/inventory.png");
+  background-repeat: no-repeat;
+  background-position: top left;
+  background-size: calc(100% * 256 / 176) calc(100% * 256 / 166);
+  filter: drop-shadow(0 16px 40px rgb(0 0 0 / 55%));
+  --u: calc(100% / 176);
 }
 
-.slot-badge {
-  font-size: 11px;
-  color: #121212;
-  font-weight: 700;
-  text-shadow: 1px 1px 0 rgb(255 255 255 / 25%);
+.inventory-slot {
+  width: calc(var(--u) * 18);
+  height: calc(var(--u) * 18);
+  background: url("./assets/minecraft/textures/gui/sprites/container/slot.png") center / 100% 100% no-repeat;
 }
 
-.slot-count {
+.inventory-slot--armor,
+.inventory-slot--offhand {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  opacity: 1;
+  filter: none;
+}
+
+.inventory-slot--armor {
+  width: calc(var(--u) * 14);
+  height: calc(var(--u) * 14);
+  position: relative;
+  z-index: 5;
+}
+
+.inventory-slot--offhand {
   position: absolute;
-  right: 3px;
-  bottom: 2px;
-  font-size: 11px;
-  font-weight: 700;
+  width: calc(var(--u) * 14);
+  height: calc(var(--u) * 14);
+  z-index: 5;
+}
+
+.inventory-slot--helmet {
+  background-image: url("./assets/minecraft/textures/gui/sprites/container/slot/helmet.png");
+}
+
+.inventory-slot--chestplate {
+  background-image: url("./assets/minecraft/textures/gui/sprites/container/slot/chestplate.png");
+}
+
+.inventory-slot--leggings {
+  background-image: url("./assets/minecraft/textures/gui/sprites/container/slot/leggings.png");
+}
+
+.inventory-slot--boots {
+  background-image: url("./assets/minecraft/textures/gui/sprites/container/slot/boots.png");
+}
+
+.inventory-armor-slot {
+  position: absolute;
+}
+
+.inventory-armor-slot--helmet {
+  left: 5.1%;
+  top: 5.7%;
+}
+
+.inventory-armor-slot--chestplate {
+  left: 5.1%;
+  top: 16.543%;
+}
+
+.inventory-armor-slot--leggings {
+  left: 5.1%;
+  top: 27.387%;
+}
+
+.inventory-armor-slot--boots {
+  left: 5.1%;
+  top: 38.23%;
+}
+
+.inventory-slot--shield {
+  background-image: url("./assets/minecraft/textures/gui/sprites/container/slot/shield.png");
+}
+
+.inventory-player {
+  position: absolute;
+  left: calc(var(--u) * 25.75);
+  top: calc(var(--u) * 8.5);
+  width: calc(var(--u) * 48);
+  height: calc(var(--u) * 73);
+}
+
+.inventory-player-preview {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.04));
+  image-rendering: pixelated;
+}
+
+#inventory-player-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.inventory-slot--offhand {
+  left: 44.3%;
+  top: 38.2%;
+}
+
+.inventory-crafting {
+  position: absolute;
+  left: calc(var(--u) * 98);
+  top: calc(var(--u) * 7);
+  width: calc(var(--u) * 70);
+  height: calc(var(--u) * 54);
+}
+
+.inventory-crafting-title {
+  position: absolute;
+  left: calc(var(--u) * 20);
+  top: calc(var(--u) * 7);
+  color: #3c3c3c;
+  font-size: calc(var(--u) * 9);
+  line-height: 1;
+}
+
+.inventory-crafting-grid {
+  position: absolute;
+  left: 0;
+  top: calc(var(--u) * 17);
+  display: grid;
+  grid-template-columns: repeat(2, calc(var(--u) * 18));
+  gap: 0;
+}
+
+.inventory-crafting-arrow {
+  position: absolute;
+  left: calc(var(--u) * 39);
+  top: calc(var(--u) * 27);
+  width: calc(var(--u) * 24);
+  height: calc(var(--u) * 17);
+}
+
+.inventory-crafting-arrow::before,
+.inventory-crafting-arrow::after {
+  content: "";
+  position: absolute;
+  background: #8a8a8a;
+}
+
+.inventory-crafting-arrow::before {
+  left: 0;
+  top: calc(var(--u) * 5.5);
+  width: calc(var(--u) * 14);
+  height: calc(var(--u) * 3);
+}
+
+.inventory-crafting-arrow::after {
+  right: 0;
+  top: calc(var(--u) * 2);
+  width: calc(var(--u) * 10);
+  height: calc(var(--u) * 10);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.inventory-crafting-result {
+  position: absolute;
+  left: calc(var(--u) * 58);
+  top: calc(var(--u) * 17);
+}
+
+.recipe-book-toggle {
+  position: absolute;
+  left: calc(var(--u) * 106);
+  top: calc(var(--u) * 65);
+  width: calc(var(--u) * 17);
+  height: calc(var(--u) * 18);
+  border: 0;
+  background: url("./assets/minecraft/textures/gui/sprites/recipe_book/button.png") center / 100% 100% no-repeat;
+  cursor: pointer;
+  image-rendering: pixelated;
+  padding: 0;
+}
+
+.recipe-book-toggle:hover {
+  background-image: url("./assets/minecraft/textures/gui/sprites/recipe_book/button_highlighted.png");
+}
+
+.inventory-storage {
+  position: absolute;
+  left: calc(var(--u) * 8);
+  right: calc(var(--u) * 8);
+  top: calc(var(--u) * 84);
+}
+
+.inventory-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(9, calc(var(--u) * 18));
+  gap: 0;
+}
+
+.inventory-slot-grid--hotbar {
+  margin-top: calc(var(--u) * 4);
+}
+
+.inventory-item-slot {
+  position: relative;
+  width: calc(var(--u) * 18);
+  height: calc(var(--u) * 18);
+}
+
+.inventory-item-icon {
+  position: absolute;
+  inset: calc(var(--u) * 2.5);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+.inventory-item-count {
+  position: absolute;
+  right: calc(var(--u) * 1.5);
+  bottom: calc(var(--u) * 1);
   color: #ffffff;
-  text-shadow: 1px 1px 0 #000;
+  font-size: calc(var(--u) * 7);
+  line-height: 1;
+  text-shadow:
+    1px 1px 0 #000,
+    -1px 1px 0 #000,
+    1px -1px 0 #000,
+    -1px -1px 0 #000;
+}
+
+.inventory-empty-slot {
+  width: calc(var(--u) * 18);
+  height: calc(var(--u) * 18);
+}
+
+.recipe-panel {
+  position: absolute;
+  right: -18px;
+  top: 44px;
+  width: 248px;
+  max-height: 468px;
+  padding: 14px 14px 12px;
+  border: 4px solid #161616;
+  box-shadow:
+    inset 0 0 0 4px #8f8f8f,
+    0 10px 24px rgb(0 0 0 / 28%);
+  background: linear-gradient(180deg, #c6c6c6 0%, #a5a5a5 100%);
+}
+
+.recipe-panel.hidden {
+  display: none;
+}
+
+.recipe-panel-title {
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #222222;
+}
+
+.recipe-panel-list {
+  display: grid;
+  gap: 8px;
+  max-height: 416px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .recipe-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  border: 2px solid #2e2e2e;
-  box-shadow: inset 0 0 0 2px #7c7c7c;
-  background: linear-gradient(180deg, #8f8f8f 0%, #7b7b7b 100%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
   padding: 8px;
+  border: 3px solid #535353;
+  box-shadow: inset 0 0 0 2px #d2d2d2;
+  background: linear-gradient(180deg, #bdbdbd 0%, #9f9f9f 100%);
 }
 
 .recipe-left {
@@ -674,47 +886,32 @@ canvas {
 }
 
 .recipe-name {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  color: #121212;
+  color: #161616;
 }
 
 .recipe-need {
-  margin-top: 2px;
-  font-size: 11px;
-  color: #202020;
-  opacity: 0.9;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #303030;
 }
 
 .recipe-item button {
-  border: 2px solid #272727;
-  box-shadow: inset 0 0 0 2px #a7a7a7;
-  background: linear-gradient(180deg, #c4c4c4 0%, #adadad 100%);
-  color: #101010;
+  align-self: center;
+  border: 2px solid #2c2c2c;
+  box-shadow: inset 0 0 0 2px #d0d0d0;
+  background: linear-gradient(180deg, #d8d8d8 0%, #b4b4b4 100%);
+  color: #121212;
   padding: 6px 10px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  white-space: nowrap;
-}
-
-.recipe-item button:hover:enabled {
-  filter: brightness(1.04);
 }
 
 .recipe-item button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-.toolbox-empty {
-  padding: 8px 10px;
-  border: 2px solid #2e2e2e;
-  box-shadow: inset 0 0 0 2px #7c7c7c;
-  background: linear-gradient(180deg, #8f8f8f 0%, #7b7b7b 100%);
-  font-size: 12px;
-  color: #202020;
-  opacity: 0.9;
 }
 
 @media (max-width: 760px) {
@@ -740,14 +937,6 @@ canvas {
 
   .floating-block {
     display: none;
-  }
-
-  .toolbox-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .slot-grid {
-    grid-template-columns: repeat(4, minmax(48px, 1fr));
   }
 
   #status {
@@ -784,6 +973,22 @@ canvas {
   .vital-icon {
     width: 14px;
     height: 14px;
+  }
+
+  #toolbox {
+    width: min(90vw, 460px);
+    height: auto;
+  }
+
+  .inventory-screen {
+    aspect-ratio: 704 / 664;
+  }
+
+  .recipe-panel {
+    right: 10px;
+    top: 10px;
+    width: min(42vw, 220px);
+    max-height: min(54vh, 360px);
   }
 }
 

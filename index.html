@@ -67,15 +67,36 @@
         <div id="hotbar"></div>
       </div>
       <div id="toolbox" class="hidden">
-        <div class="toolbox-title">物品栏 / 制作 (E)</div>
-        <div class="toolbox-grid">
-          <div>
-            <div class="toolbox-subtitle">背包</div>
-            <div id="inventory-list" class="toolbox-list"></div>
+        <div class="inventory-screen">
+          <div class="inventory-slot inventory-slot--armor inventory-slot--helmet inventory-armor-slot inventory-armor-slot--helmet"></div>
+          <div class="inventory-slot inventory-slot--armor inventory-slot--chestplate inventory-armor-slot inventory-armor-slot--chestplate"></div>
+          <div class="inventory-slot inventory-slot--armor inventory-slot--leggings inventory-armor-slot inventory-armor-slot--leggings"></div>
+          <div class="inventory-slot inventory-slot--armor inventory-slot--boots inventory-armor-slot inventory-armor-slot--boots"></div>
+          <div class="inventory-slot inventory-slot--offhand inventory-slot--shield"></div>
+          <div class="inventory-player">
+            <div class="inventory-player-preview">
+              <canvas id="inventory-player-canvas" width="140" height="220"></canvas>
+            </div>
           </div>
-          <div>
-            <div class="toolbox-subtitle">合成</div>
-            <div id="recipe-list" class="toolbox-list"></div>
+          <div class="inventory-crafting">
+            <div class="inventory-crafting-title">合成</div>
+            <div class="inventory-crafting-grid">
+              <div class="inventory-slot"></div>
+              <div class="inventory-slot"></div>
+              <div class="inventory-slot"></div>
+              <div class="inventory-slot"></div>
+            </div>
+            <div class="inventory-crafting-arrow"></div>
+            <div class="inventory-slot inventory-crafting-result"></div>
+          </div>
+          <button id="recipe-book-toggle" class="recipe-book-toggle" type="button" aria-label="打开配方书"></button>
+          <div class="inventory-storage">
+            <div id="inventory-list" class="inventory-slot-grid"></div>
+            <div id="inventory-hotbar-grid" class="inventory-slot-grid inventory-slot-grid--hotbar"></div>
+          </div>
+          <div id="recipe-panel" class="recipe-panel hidden">
+            <div class="recipe-panel-title">配方书</div>
+            <div id="recipe-list" class="recipe-panel-list"></div>
           </div>
         </div>
       </div>

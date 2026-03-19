@@ -83,6 +83,9 @@ export function createBlockMaterials() {
   const shortGrass = loadTexture(
     "../../assets/minecraft/textures/block/short_grass.png"
   );
+  const sugarCane = loadTexture(
+    "../../assets/minecraft/textures/block/sugar_cane.png"
+  );
   const craftingTop = loadTexture(
     "../../assets/minecraft/textures/block/crafting_table_top.png"
   );
@@ -168,6 +171,7 @@ export function createBlockMaterials() {
       side: THREE.DoubleSide,
     }),
     short_grass: mat(shortGrass, { ...plantExtra, color: grassTint }),
+    sugar_cane: mat(sugarCane, plantExtra),
     flower_red: mat(flowerRed, plantExtra),
     flower_yellow: mat(flowerYellow, plantExtra),
     flower_blue: mat(flowerBlue, plantExtra),

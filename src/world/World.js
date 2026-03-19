@@ -349,6 +349,34 @@ export class World {
     blocks.set(localKey(lx, height + 1, lz), this.flowerTypeAt(gx, gz));
   }
 
+  shouldGenerateSugarCaneAt(x, z, height, surface) {
+    if (surface !== "sand") return false;
+    if (height + 2 >= this.maxHeight) return false;
+
+    const patchNoise =
+      Math.sin((x + this.seed * 0.08) * 0.12) +
+      Math.cos((z - this.seed * 0.06) * 0.1) +
+      Math.sin((x - z) * 0.045);
+    if (patchNoise < 1.5) return false;
+
+    if (this.hash2(x + 41, z - 23) < 0.978) return false;
+    if (this.hash2(x * 1.3 - 9, z * 1.8 + 5) < 0.72) return false;
+
+    return true;
+  }
+
+  tryGenerateSugarCane(blocks, lx, height, lz, gx, gz, surface) {
+    if (blocks.has(localKey(lx, height + 1, lz))) return;
+    if (!this.shouldGenerateSugarCaneAt(gx, gz, height, surface)) return;
+
+    const stalkHeight = 2 + Math.floor(this.hash2(gx + 71, gz - 57) * 3);
+    for (let dy = 1; dy <= stalkHeight; dy++) {
+      const y = height + dy;
+      if (y >= this.maxHeight) break;
+      blocks.set(localKey(lx, y, lz), "sugar_cane");
+    }
+  }
+
   getTreeDescriptor(x, z, height, surface = this.surfaceType(x, z)) {
     if (surface !== "grass") return null;
     const groveNoise =
@@ -522,6 +550,7 @@ export class World {
         this.tryGenerateTree(blocks, lx, height, lz, gx, gz);
         this.tryGenerateGrass(blocks, lx, height, lz, gx, gz, surface);
         this.tryGenerateFlower(blocks, lx, height, lz, gx, gz, surface);
+        this.tryGenerateSugarCane(blocks, lx, height, lz, gx, gz, surface);
       }
     }
 
