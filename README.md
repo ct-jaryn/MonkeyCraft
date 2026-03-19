@@ -1,66 +1,74 @@
 # MonkeyCraft
 
-MonkeyCraft is a browser-based Minecraft-style demo focused on exploration, gathering, and building.
+MonkeyCraft 是一个网页版 Minecraft 风格演示项目，核心玩法聚焦在探索、采集与建造。
 
-This project was created as a showcase for the **MonkeyCode AI** programming platform:
+这个项目同时也是 **MonkeyCode AI** 编程平台的能力展示样例，用来说明 AI 辅助编程平台如何帮助团队更快地完成从想法到可交互 Demo 的落地。
 
-- Website: [https://monkeycode-ai.com/](https://monkeycode-ai.com/)
-- Positioning: an AI-native coding platform for building products, prototypes, and interactive demos faster
+- MonkeyCode AI 官网：[https://monkeycode-ai.com/](https://monkeycode-ai.com/)
+- 平台定位：面向产品原型、交互 Demo、前端项目和快速迭代开发的 AI 编程平台
+- 在线试玩地址：[https://safe1ine.github.io/MonkeyCraft/](https://safe1ine.github.io/MonkeyCraft/)
 
-## Background
+## 项目背景
 
-MonkeyCraft exists to demonstrate what MonkeyCode AI can help teams build in a short iteration cycle:
+MonkeyCraft 并不是一个静态展示页，而是一个可以直接进入、生成地图并开始游玩的浏览器 Demo。  
+这个项目想表达的是：借助 MonkeyCode AI，可以更高效地完成下面这类工作：
 
-- a playable browser voxel world
-- procedural terrain with mountains, caves, trees, grass, and flowers
-- Minecraft-style HUD and interactions
-- pure frontend single-player delivery with no backend dependency
+- 快速搭建可玩的网页原型
+- 持续迭代 UI、交互和视觉表现
+- 结合反馈不断修改玩法和世界生成逻辑
+- 用纯前端方式交付可直接试玩的体验
 
-Instead of being just a static landing page demo, MonkeyCraft is an interactive example of using MonkeyCode AI to go from idea to playable web experience.
+## 为什么做这个项目
 
-## Why This Project
+我们希望用 MonkeyCraft 说明，MonkeyCode AI 并不只适合写普通业务页面，也适合下面这些更具表现力的项目：
 
-This demo is meant to highlight the kind of work that fits MonkeyCode AI well:
+- 网页游戏原型
+- 3D/体素类交互体验
+- 带完整 HUD 和操作逻辑的演示项目
+- 需要持续打磨细节的前端产品实验
 
-- rapid prototyping
-- game-like web experiences
-- AI-assisted UI iteration
-- frontend-heavy product experiments
-- continuous refinement based on visual feedback
-
-If you want to explore the platform behind this demo, visit:
+如果你想了解这个 Demo 背后的平台，可以访问：
 
 [https://monkeycode-ai.com/](https://monkeycode-ai.com/)
 
-## Current Features
+## 当前能力
 
-- browser-based first-person sandbox
-- random world generation for each new session
-- mountains, caves, oak trees, birch trees, flowers, and grass
-- block mining and placement
-- crafting UI and inventory
-- Minecraft-inspired HUD
-- local single-player play
+当前版本已经具备这些内容：
 
-## Run Locally
+- 浏览器第一人称视角
+- 每次开始生成新的随机世界
+- 地形包含高山、洞穴、草地、树木、花和草丛
+- 世界中包含橡树和桦树
+- 支持挖掘和放置方块
+- 支持背包与基础合成界面
+- 带有 Minecraft 风格的 HUD 和热栏
+- 单机纯前端运行，无需后端服务
+
+## 项目截图
+
+![MonkeyCraft 截图 1](./docs/images/mc1.png)
+
+![MonkeyCraft 截图 2](./docs/images/mc2.png)
+
+## 本地运行
 
 ```bash
 npm run serve
 ```
 
-Or:
+或者：
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open:
+然后在浏览器打开：
 
 ```text
 http://localhost:8000
 ```
 
-## Notes
+## 说明
 
-- This is a demo project, not a full Minecraft clone.
-- The main goal is to showcase a browser-based Minecraft experience built with support from MonkeyCode AI.
+- 这是一个演示性质的项目，不是完整 Minecraft 复刻。
+- 这个项目的重点是展示 MonkeyCode AI 在构建网页版 Minecraft 风格 Demo 时的效率和可迭代性。
