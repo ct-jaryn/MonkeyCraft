@@ -13,10 +13,12 @@ export class Game {
     const skyColor = 0x9edbff;
     const fogEnd = WORLD_CONFIG.chunkSize * (WORLD_CONFIG.renderDistance * 2 + 1) * 0.64;
     const fogStart = Math.max(14, fogEnd * 0.3);
+    this.defaultSkyColor = new THREE.Color(skyColor);
+    this.underwaterSkyColor = new THREE.Color(0x3f6db1);
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(skyColor);
-    this.scene.fog = new THREE.Fog(skyColor, fogStart, fogEnd);
+    this.scene.background = this.defaultSkyColor.clone();
+    this.scene.fog = new THREE.Fog(this.defaultSkyColor.clone(), fogStart, fogEnd);
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 300);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -48,6 +50,8 @@ export class Game {
     this.maxHunger = 10;
     this.hunger = 10;
     this.hungerDrainTimer = 0;
+    this.waterDamageTimer = 0;
+    this.cameraUnderwater = false;
     this.mining = {
       active: false,
       targetKey: "",
@@ -273,6 +277,8 @@ export class Game {
     this.health = this.maxHealth;
     this.hunger = this.maxHunger;
     this.hungerDrainTimer = 0;
+    this.waterDamageTimer = 0;
+    this.cameraUnderwater = false;
     this.selectedBlockIndex = 0;
     this.currentLookTarget = null;
     this.leftMouseDown = false;
@@ -280,6 +286,28 @@ export class Game {
     this.stopMining();
     this.selectionOutline.visible = false;
     this.hud.setVitals({ health: this.health, hunger: this.hunger });
+    this.hud.setUnderwater(false);
+    this.applyWaterView(false);
+  }
+
+  getBlockAtWorldPosition(x, y, z) {
+    return this.world.getBlock(Math.floor(x), Math.floor(y), Math.floor(z));
+  }
+
+  isPointInWater(x, y, z) {
+    return this.getBlockAtWorldPosition(x, y, z) === "water";
+  }
+
+  isCameraUnderwater() {
+    const { x, y, z } = this.camera.position;
+    return this.isPointInWater(x, y, z);
+  }
+
+  applyWaterView(active) {
+    const targetColor = active ? this.underwaterSkyColor : this.defaultSkyColor;
+    this.scene.background?.copy(targetColor);
+    this.scene.fog?.color.copy(targetColor);
+    this.hud.setUnderwater(active);
   }
 
   handleBlockHotkeys(event) {
@@ -354,7 +382,7 @@ export class Game {
       if (!this.inventory.consume(blockType, 1)) return;
       if (!this.world.getBlock(tx, ty, tz) && this.player.canPlaceAt(tx, ty, tz)) {
         this.world.setBlock(tx, ty, tz, blockType);
-        this.sfx.playPlace();
+        this.sfx.playPlace(blockType);
         this.refreshInventoryUI();
       } else {
         this.inventory.add(blockType, 1);
@@ -443,7 +471,7 @@ export class Game {
 
     this.mineTickSfxAt -= dt;
     if (this.mineTickSfxAt <= 0) {
-      this.sfx.playMineTick();
+      this.sfx.playMineTick(this.mining.blockType);
       this.mineTickSfxAt = 0.16;
     }
 
@@ -457,7 +485,7 @@ export class Game {
       this.inventory.add(dropType, 1);
       this.refreshInventoryUI();
     }
-    this.sfx.playBreak();
+    this.sfx.playBreak(minedType);
     this.mining.cooldown = 0.08;
     this.mining.active = false;
     this.mining.targetKey = "";
@@ -522,6 +550,24 @@ export class Game {
 
   updateVitals(dt) {
     if (!this.started) return;
+
+    const cameraUnderwater = this.isCameraUnderwater();
+
+    if (cameraUnderwater && this.health > 0) {
+      this.waterDamageTimer += dt;
+      while (this.health > 0 && this.waterDamageTimer >= 1) {
+        this.health -= 1;
+        this.waterDamageTimer -= 1;
+      }
+    } else {
+      this.waterDamageTimer = 0;
+    }
+
+    if (cameraUnderwater !== this.cameraUnderwater) {
+      this.cameraUnderwater = cameraUnderwater;
+      this.applyWaterView(cameraUnderwater);
+    }
+
     if (this.hunger > 1) {
       this.hungerDrainTimer += dt;
       while (this.hunger > 1 && this.hungerDrainTimer >= 60) {
@@ -568,6 +614,7 @@ export class Game {
     this.bindEvents();
     this.hud.setWelcomeStatus("等待开始");
     this.hud.waitForStart(() => {
+      this.sfx.prime();
       this.beginGame().catch((err) => {
         console.error("Game start failed", err);
         this.hud.setWelcomeStatus("地图生成失败，请刷新重试");

@@ -12,8 +12,44 @@ function loadTexture(relativePath) {
   return texture;
 }
 
+function loadVerticalSpriteFrame(relativePath, frameSize = 16, frameIndex = 0) {
+  const canvas = document.createElement("canvas");
+  canvas.width = frameSize;
+  canvas.height = frameSize;
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestMipmapNearestFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+
+  new THREE.ImageLoader().load(new URL(relativePath, import.meta.url).href, (image) => {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, frameSize, frameSize);
+    ctx.drawImage(
+      image,
+      0,
+      frameIndex * frameSize,
+      frameSize,
+      frameSize,
+      0,
+      0,
+      frameSize,
+      frameSize
+    );
+    texture.needsUpdate = true;
+  });
+
+  return texture;
+}
+
 function mat(texture, extra = {}) {
   return new THREE.MeshLambertMaterial({ map: texture, ...extra });
+}
+
+function colorMat(color, extra = {}) {
+  return new THREE.MeshLambertMaterial({ color, ...extra });
 }
 
 function createFlowerTexture(petalColor) {
@@ -64,6 +100,9 @@ export function createBlockMaterials() {
   );
   const stone = loadTexture("../../assets/minecraft/textures/block/stone.png");
   const sand = loadTexture("../../assets/minecraft/textures/block/sand.png");
+  const waterStill = loadVerticalSpriteFrame(
+    "../../assets/minecraft/textures/block/water_still.png"
+  );
   const woodSide = loadTexture("../../assets/minecraft/textures/block/oak_log.png");
   const woodTop = loadTexture(
     "../../assets/minecraft/textures/block/oak_log_top.png"
@@ -120,6 +159,15 @@ export function createBlockMaterials() {
     ],
     stone: mat(stone),
     sand: mat(sand),
+    water: {
+      top: mat(waterStill, {
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        color: new THREE.Color(0x2f63cf),
+      }),
+    },
     wood: [
       mat(woodSide),
       mat(woodSide),

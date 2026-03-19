@@ -8,6 +8,7 @@ export class Hud {
     this.startButtonEl = document.getElementById("start-game-button");
     this.welcomeStatusEl = document.getElementById("welcome-status");
     this.welcomeLoadingEl = document.getElementById("welcome-loading");
+    this.underwaterOverlayEl = document.getElementById("underwater-overlay");
     this.tipsEl = document.getElementById("tips");
     this.statusEl = document.getElementById("status");
     this.hotbarEl = document.getElementById("hotbar");
@@ -32,6 +33,7 @@ export class Hud {
     this.health = 10;
     this.hunger = 10;
     this.recipePanelOpen = false;
+    this.underwater = false;
 
     this.recipeBookToggleEl?.addEventListener("click", () => {
       this.recipePanelOpen = !this.recipePanelOpen;
@@ -88,6 +90,12 @@ export class Hud {
   hideWelcome() {
     this.welcomeScreenEl?.classList.add("hidden");
     this.hudEl?.classList.remove("hidden");
+  }
+
+  setUnderwater(active) {
+    this.underwater = !!active;
+    this.underwaterOverlayEl?.classList.toggle("hidden", !this.underwater);
+    this.underwaterOverlayEl?.classList.toggle("is-active", this.underwater);
   }
 
   setPointerLock(locked) {

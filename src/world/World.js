@@ -20,10 +20,12 @@ export class World {
     this.chunkSize = WORLD_CONFIG.chunkSize;
     this.maxHeight = WORLD_CONFIG.maxHeight;
     this.renderDistance = WORLD_CONFIG.renderDistance;
+    this.seaLevel = WORLD_CONFIG.seaLevel;
     this.seed = WORLD_CONFIG.seed;
 
     this.cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
     this.plantGeometry = new THREE.PlaneGeometry(1, 1);
+    this.waterGeometry = new THREE.PlaneGeometry(1, 1);
     this.materials = createBlockMaterials();
 
     this.activeChunks = new Map();
@@ -75,6 +77,9 @@ export class World {
     const type = this.getBlock(x, y, z);
     if (!type) return false;
     if (BLOCKS[type]?.renderType === "cross") return true;
+    if (type === "water") {
+      return this.getBlock(x, y + 1, z) !== "water";
+    }
 
     for (const [dx, dy, dz] of NEIGHBORS) {
       const neighbor = this.getBlock(x + dx, y + dy, z + dz);
@@ -101,7 +106,19 @@ export class World {
     return group;
   }
 
+  createWaterObject(x, y, z) {
+    const mesh = new THREE.Mesh(this.waterGeometry, this.materials.water.top);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x + 0.5, y + 0.86, z + 0.5);
+    mesh.userData.blockPos = { x, y, z };
+    mesh.userData.blockType = "water";
+    return mesh;
+  }
+
   createBlockObject(type, x, y, z) {
+    if (type === "water") {
+      return this.createWaterObject(x, y, z);
+    }
     if (BLOCKS[type]?.renderType === "cross") {
       return this.createCrossPlantObject(type, x, y, z);
     }
@@ -249,10 +266,34 @@ export class World {
   }
 
   surfaceType(x, z) {
+    const height = this.terrainHeight(x, z);
     const biomeNoise = Math.sin((x + this.seed) * 0.05) + Math.cos((z - this.seed) * 0.06);
+    if (height <= this.seaLevel) return "sand";
     if (biomeNoise > 1.0) return "sand";
     if (biomeNoise < -1.1) return "stone";
     return "grass";
+  }
+
+  shouldFloodColumn(x, z, height) {
+    if (height >= this.seaLevel - 1) return false;
+    if (height <= this.seaLevel - 4) return true;
+
+    const basinNoise =
+      Math.sin((x - this.seed * 0.23) * 0.032) +
+      Math.cos((z + this.seed * 0.19) * 0.029) +
+      this.hash2(x * 0.71 + 17, z * 0.67 - 11) * 0.72;
+
+    return basinNoise > 1.15;
+  }
+
+  isAdjacentToWater(blocks, lx, y, lz) {
+    const neighbors = [
+      [lx + 1, y, lz],
+      [lx - 1, y, lz],
+      [lx, y, lz + 1],
+      [lx, y, lz - 1],
+    ];
+    return neighbors.some(([nx, ny, nz]) => blocks.get(localKey(nx, ny, nz)) === "water");
   }
 
   shouldCarveCave(x, y, z, surfaceHeight) {
@@ -368,6 +409,7 @@ export class World {
   tryGenerateSugarCane(blocks, lx, height, lz, gx, gz, surface) {
     if (blocks.has(localKey(lx, height + 1, lz))) return;
     if (!this.shouldGenerateSugarCaneAt(gx, gz, height, surface)) return;
+    if (!this.isAdjacentToWater(blocks, lx, height + 1, lz)) return;
 
     const stalkHeight = 2 + Math.floor(this.hash2(gx + 71, gz - 57) * 3);
     for (let dy = 1; dy <= stalkHeight; dy++) {
@@ -447,6 +489,7 @@ export class World {
     const height = this.terrainHeight(x, z);
     const surface = this.surfaceType(x, z);
     if (surface !== "grass") return false;
+    if (height <= this.seaLevel) return false;
     if (!this.isFlatEnoughForSpawn(x, z, height)) return false;
     if (this.shouldGenerateGrassAt(x, z, height, surface)) return false;
     if (this.shouldGenerateFlowerAt(x, z, height, surface)) return false;
@@ -546,6 +589,11 @@ export class World {
           else if (y < height - 2) type = "stone";
           if (type === "stone" && this.shouldCarveCave(gx, y, gz, height)) continue;
           blocks.set(localKey(lx, y, lz), type);
+        }
+        if (this.shouldFloodColumn(gx, gz, height)) {
+          for (let y = height + 1; y <= this.seaLevel; y++) {
+            blocks.set(localKey(lx, y, lz), "water");
+          }
         }
         this.tryGenerateTree(blocks, lx, height, lz, gx, gz);
         this.tryGenerateGrass(blocks, lx, height, lz, gx, gz, surface);

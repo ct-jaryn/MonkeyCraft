@@ -3,6 +3,7 @@ export const WORLD_CONFIG = {
   maxHeight: 64,
   renderDistance: 3,
   seed: 1337,
+  seaLevel: 20,
 };
 
 export const PLAYER_CONFIG = {
@@ -20,6 +21,7 @@ export const BLOCKS = {
   dirt: { color: 0x8b5a2b, solid: true, breakTime: 0.4 },
   stone: { color: 0x8f8f8f, solid: true, breakTime: 1.2 },
   sand: { color: 0xd8c07a, solid: true, breakTime: 0.35 },
+  water: { color: 0x4b8fe8, solid: false, occludes: false, breakable: false },
   wood: { color: 0x8a5a2a, solid: true, breakTime: 0.85 },
   leaves: { color: 0x3f8f45, solid: true, breakTime: 0.2 },
   oak_log: { color: 0x8a5a2a, solid: true, breakTime: 0.85, drop: "wood" },
@@ -43,6 +45,7 @@ export const BLOCK_LABELS = {
   dirt: "泥土",
   stone: "石头",
   sand: "沙子",
+  water: "水",
   wood: "木头",
   leaves: "树叶",
   oak_log: "橡木",

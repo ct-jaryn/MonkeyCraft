@@ -374,6 +374,24 @@ canvas {
   display: none;
 }
 
+#underwater-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, rgb(122 184 255 / 0.2) 0%, rgb(74 130 214 / 0.22) 28%, rgb(39 88 170 / 0.44) 100%),
+    linear-gradient(180deg, rgb(55 108 198 / 0.22) 0%, rgb(26 67 145 / 0.52) 100%);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+#underwater-overlay.hidden {
+  opacity: 0;
+}
+
+#underwater-overlay.is-active {
+  opacity: 1;
+}
+
 #tips {
   position: absolute;
   top: 14px;
