@@ -220,7 +220,7 @@ export class Game {
     this.miningOverlayMaterial = new THREE.MeshBasicMaterial({
       map: this.crackTextures[0],
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.5,
       depthWrite: false,
       polygonOffset: true,
       polygonOffsetFactor: -1,

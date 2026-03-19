@@ -286,6 +286,22 @@ export class World {
     return basinNoise > 1.15;
   }
 
+  shouldFloodShoreline(x, z, height) {
+    if (height !== this.seaLevel - 1) return false;
+
+    const neighbors = [
+      [x + 1, z],
+      [x - 1, z],
+      [x, z + 1],
+      [x, z - 1],
+    ];
+
+    return neighbors.some(([nx, nz]) => {
+      const neighborHeight = this.terrainHeight(nx, nz);
+      return neighborHeight < this.seaLevel - 1 && this.shouldFloodColumn(nx, nz, neighborHeight);
+    });
+  }
+
   isAdjacentToWater(blocks, lx, y, lz) {
     const neighbors = [
       [lx + 1, y, lz],
@@ -590,7 +606,7 @@ export class World {
           if (type === "stone" && this.shouldCarveCave(gx, y, gz, height)) continue;
           blocks.set(localKey(lx, y, lz), type);
         }
-        if (this.shouldFloodColumn(gx, gz, height)) {
+        if (this.shouldFloodColumn(gx, gz, height) || this.shouldFloodShoreline(gx, gz, height)) {
           for (let y = height + 1; y <= this.seaLevel; y++) {
             blocks.set(localKey(lx, y, lz), "water");
           }
