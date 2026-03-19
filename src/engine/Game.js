@@ -133,16 +133,16 @@ export class Game {
         opacity: 0.92,
       });
       const sprite = new THREE.Sprite(material);
-      const width = 30 + ((i * 17) % 18);
-      const height = width * (0.3 + ((i * 11) % 5) * 0.03);
+      const width = 96 + ((i * 17) % 20);
+      const height = width * (0.28 + ((i * 11) % 5) * 0.025);
       sprite.scale.set(width, height, 1);
       this.cloudSprites.push({
         sprite,
         angle: (i / cloudCount) * Math.PI * 2 + ((i % 3) - 1) * 0.12,
-        radius: 110 + (i % 6) * 18 + Math.floor(i / 3) * 4,
+        radius: 165 + (i % 6) * 26 + Math.floor(i / 3) * 8,
         height: 42 + (i % 5) * 4 + ((i * 13) % 3),
         drift: 0.6 + (i % 4) * 0.18,
-        wobble: 2 + (i % 3) * 0.7,
+        wobble: 3 + (i % 3) * 1.1,
         phase: i * 0.9,
       });
       this.scene.add(sprite);

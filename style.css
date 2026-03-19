@@ -699,10 +699,10 @@ canvas {
 
 .inventory-player {
   position: absolute;
-  left: calc(var(--u) * 27);
-  top: calc(var(--u) * 10);
-  width: calc(var(--u) * 43);
-  height: calc(var(--u) * 67);
+  left: calc(var(--u) * 28);
+  top: calc(var(--u) * 11);
+  width: calc(var(--u) * 40);
+  height: calc(var(--u) * 63);
 }
 
 .inventory-player-preview {
